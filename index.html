@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d0d0f">
+<title>Family Budget Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --text: #f0eff5;
+    --muted: #7a7a8c;
+    --accent: #f5c842;
+    --danger: #ff5252;
+    --safe: #3ddc84;
+    --warn: #ff9800;
+    --father: #6c8eff;
+    --home: #c77dff;
+    --debt: #ff7eb9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* HEADER & SUMMARY */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .header h1 { font-size: 17px; font-weight: 800; }
+  
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .summary-card { background: var(--surface2); border-radius: 10px; padding: 12px; border: 1px solid var(--border); }
+  .summary-card.full { grid-column: 1 / -1; }
+  .summary-card .label { font-size: 9px; color: var(--muted); text-transform: uppercase; font-family: 'DM Mono'; margin-bottom: 4px; }
+  .summary-card .value { font-size: 18px; font-weight: 800; font-family: 'DM Mono'; }
+
+  /* TABS */
+  .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 9; }
+  .tab { flex: 1; padding: 12px 0; text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  /* SECTIONS */
+  .tab-panel { display: none; padding: 14px; }
+  .tab-panel.active { display: block; }
+  .section { margin-bottom: 20px; }
+  .section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .section-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
+
+  /* ROWS */
+  .row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .row-flex { display: flex; justify-content: space-between; align-items: center; }
+  .row-info .name { font-size: 13px; font-weight: 700; }
+  .row-info .sub { font-size: 10px; color: var(--muted); font-family: 'DM Mono'; }
+
+  /* INPUTS */
+  .inp-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+  }
+  .rupee { font-size: 12px; color: var(--muted); font-family: 'DM Mono'; }
+  input {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    width: 80px;
+    text-align: right;
+  }
+  .income-val { color: var(--safe); font-weight: 700; }
+
+  /* EDIT MODE STYLES */
+  .edit-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    background: var(--surface2);
+    padding: 8px;
+    border-radius: 8px;
+  }
+  .edit-list-item input { text-align: left; width: 100%; }
+  .btn-del { color: var(--danger); font-weight: 800; padding: 0 8px; cursor: pointer; }
+  .btn-add {
+    width: 100%;
+    padding: 10px;
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+    color: var(--accent);
+    border-radius: 8px;
+    font-weight: 700;
+    margin-top: 8px;
+  }
+
+  /* FLOATING SAVE */
+  .floating-actions {
+    position: fixed;
+    bottom: 20px;
+    left: 14px;
+    right: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .btn-main {
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Syne';
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  }
+  .btn-save { background: var(--accent); color: #000; }
+  .btn-reset { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+  .leak-alert { background: #1a0808; border: 1px solid var(--danger); border-radius: 10px; padding: 10px; margin-top: 8px; color: var(--danger); font-weight: 700; display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>Family Budget Pro</h1>
+    <div id="dateDisplay" style="font-family:'DM Mono'; font-size:12px; color:var(--muted)">MARCH 2026</div>
+  </div>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Total Income</div>
+      <div id="totalInc" class="value" style="color:var(--safe)">₹0</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total Outflow</div>
+      <div id="totalOut" class="value" style="color:var(--danger)">₹0</div>
+    </div>
+    <div class="summary-card full">
+      <div class="label">Net Savings / Balance</div>
+      <div id="netBalance" class="value">₹0</div>
+    </div>
+  </div>
+  <div id="leakAlert" class="leak-alert">⚠️ OVER BUDGET!</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('tracker')">📊 TRACKER</div>
+  <div class="tab" onclick="showTab('debts')">💸 DEBT</div>
+  <div class="tab" onclick="showTab('edit')">⚙️ EDIT MODE</div>
+</div>
+
+<div id="tab-tracker" class="tab-panel active">
+  <div class="section">
+    <div class="section-header"><div class="section-dot" style="background:var(--safe)"></div><div class="section-title">Income Sources</div></div>
+    <div class="row row-flex">
+      <div class="row-info"><div class="name">💼 Father's Salary</div></div>
+      <div class="inp-wrap"><span class="rupee">₹</span><input type="number" id="inc-salary" class="income-val" oninput="calculate()"></div>
+    </div>
+    <div class="row row-flex">
+      <div class="row-info"><div class="name">⏱ Overtime</div></div>
+      <div class="inp-wrap"><span class="rupee">₹</span><input type="number" id="inc-overtime" class="income-val" oninput="calculate()"></div>
+    </div>
+    <div class="row row-flex">
+      <div class="row-info"><div class="name">🚜 Farming Income</div></div>
+      <div class="inp-wrap"><span class="rupee">₹</span><input type="number" id="inc-farming" class="income-val" oninput="calculate()"></div>
+    </div>
+    <div class="row row-flex">
+      <div class="row-info"><div class="name">💰 Debt Repayment Taken</div><div class="sub">Money someone paid you back</div></div>
+      <div class="inp-wrap"><span class="rupee">₹</span><input type="number" id="inc-debt-repay" class="income-val" oninput="calculate()"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header"><div class="section-dot" style="background:var(--home)"></div><div class="section-title">Daily & Occasion Expenses</div></div>
+    <div id="expenses-list"></div>
+  </div>
+</div>
+
+<div id="tab-debts" class="tab-panel">
+  <div class="section">
+    <div class="section-header"><div class="section-dot" style="background:var(--danger)"></div><div class="section-title">Debt Repayment (You Paying)</div></div>
+    <div id="debt-pay-list"></div>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-dot" style="background:var(--warn)"></div><div class="section-title">New Debt Management</div></div>
+    <div class="row row-flex">
+      <div class="row-info"><div class="name">📥 Debt Taken</div><div class="sub">Cash inflow (Loan)</div></div>
+      <div class="inp-wrap"><span class="rupee">₹</span><input type="number" id="debt-taken" class="income-val" oninput="calculate()"></div>
+    </div>
+    <div class="row row-flex">
+      <div class="row-info"><div class="name">📤 Debt Given</div><div class="sub">Cash outflow (Lending)</div></div>
+      <div class="inp-wrap"><span class="rupee">₹</span><input type="number" id="debt-given" oninput="calculate()"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-edit" class="tab-panel">
+  <div class="section">
+    <div class="section-header"><div class="section-title">Manage Expense Categories</div></div>
+    <div id="edit-expenses"></div>
+    <button class="btn-add" onclick="addItem('expense')">+ Add Expense Category</button>
+  </div>
+  <div class="section">
+    <div class="section-header"><div class="section-title">Manage Debt Sources</div></div>
+    <div id="edit-debts"></div>
+    <button class="btn-add" onclick="addItem('debt')">+ Add Debt Source</button>
+  </div>
+  <div style="margin-top: 20px; font-size: 10px; color: var(--muted); text-align: center;">Changes in Edit Mode are saved locally.</div>
+</div>
+
+<div class="floating-actions">
+  <button class="btn-main btn-reset" onclick="resetForm()">RESET</button>
+  <button class="btn-main btn-save" onclick="saveData()">SAVE MONTH</button>
+</div>
+
+<script>
+  // Initial Data Structure
+  let config = JSON.parse(localStorage.getItem('budget_config')) || {
+    expenses: [
+      { id: 1, name: 'Grocery', emoji: '🛒' },
+      { id: 2, name: 'Electricity/Bills', emoji: '💡' },
+      { id: 3, name: 'Medicine', emoji: '💊' },
+      { id: 4, name: 'Marriage/Occasions', emoji: '🎉' }
+    ],
+    debts: [
+      { id: 1, name: 'Bank Loan', emoji: '🏦' },
+      { id: 2, name: 'Local Lender', emoji: '👤' }
+    ]
+  };
+
+  function showTab(tab) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    event.currentTarget.classList.add('active');
+    if(tab === 'edit') renderEditMode();
+    if(tab === 'tracker' || tab === 'debts') renderTracker();
+  }
+
+  function renderTracker() {
+    // Render Expenses
+    const expList = document.getElementById('expenses-list');
+    const currentVals = getInputs();
+    expList.innerHTML = config.expenses.map(item => `
+      <div class="row row-flex">
+        <div class="row-info"><div class="name">${item.emoji} ${item.name}</div></div>
+        <div class="inp-wrap"><span class="rupee">₹</span><input type="number" id="exp-${item.id}" value="${currentVals['exp-'+item.id] || ''}" oninput="calculate()"></div>
+      </div>
+    `).join('');
+
+    // Render Debt Repayments
+    const debtList = document.getElementById('debt-pay-list');
+    debtList.innerHTML = config.debts.map(item => `
+      <div class="row row-flex">
+        <div class="row-info"><div class="name">${item.emoji} ${item.name}</div></div>
+        <div class="inp-wrap"><span class="rupee">₹</span><input type="number" id="dbpay-${item.id}" value="${currentVals['dbpay-'+item.id] || ''}" oninput="calculate()"></div>
+      </div>
+    `).join('');
+  }
+
+  function renderEditMode() {
+    const expEdit = document.getElementById('edit-expenses');
+    expEdit.innerHTML = config.expenses.map((item, idx) => `
+      <div class="edit-list-item">
+        <input type="text" value="${item.emoji}" style="width:40px" onchange="updateItem('expense', ${idx}, 'emoji', this.value)">
+        <input type="text" value="${item.name}" onchange="updateItem('expense', ${idx}, 'name', this.value)">
+        <span class="btn-del" onclick="removeItem('expense', ${idx})">✕</span>
+      </div>
+    `).join('');
+
+    const debtEdit = document.getElementById('edit-debts');
+    debtEdit.innerHTML = config.debts.map((item, idx) => `
+      <div class="edit-list-item">
+        <input type="text" value="${item.emoji}" style="width:40px" onchange="updateItem('debt', ${idx}, 'emoji', this.value)">
+        <input type="text" value="${item.name}" onchange="updateItem('debt', ${idx}, 'name', this.value)">
+        <span class="btn-del" onclick="removeItem('debt', ${idx})">✕</span>
+      </div>
+    `).join('');
+  }
+
+  function addItem(type) {
+    const newObj = { id: Date.now(), name: 'New Item', emoji: '🔹' };
+    if(type === 'expense') config.expenses.push(newObj);
+    else config.debts.push(newObj);
+    saveConfig();
+    renderEditMode();
+  }
+
+  function updateItem(type, idx, key, val) {
+    if(type === 'expense') config.expenses[idx][key] = val;
+    else config.debts[idx][key] = val;
+    saveConfig();
+  }
+
+  function removeItem(type, idx) {
+    if(type === 'expense') config.expenses.splice(idx, 1);
+    else config.debts.splice(idx, 1);
+    saveConfig();
+    renderEditMode();
+  }
+
+  function saveConfig() {
+    localStorage.setItem('budget_config', JSON.stringify(config));
+  }
+
+  function getInputs() {
+    const inputs = document.querySelectorAll('input[type="number"]');
+    let data = {};
+    inputs.forEach(inp => { if(inp.id) data[inp.id] = inp.value; });
+    return data;
+  }
+
+  function calculate() {
+    const val = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+    
+    // Total Income = Salary + Overtime + Farming + Debt Taken + Repayment Received
+    const totalInc = val('inc-salary') + val('inc-overtime') + val('inc-farming') + val('inc-debt-repay') + val('debt-taken');
+    
+    // Total Outflow = All Expenses + Debt Given + Debt Repayments
+    let totalOut = val('debt-given');
+    config.expenses.forEach(item => totalOut += val('exp-' + item.id));
+    config.debts.forEach(item => totalOut += val('dbpay-' + item.id));
+
+    const balance = totalInc - totalOut;
+
+    document.getElementById('totalInc').innerText = '₹' + totalInc.toLocaleString('en-IN');
+    document.getElementById('totalOut').innerText = '₹' + totalOut.toLocaleString('en-IN');
+    const balEl = document.getElementById('netBalance');
+    balEl.innerText = (balance >= 0 ? '+' : '') + '₹' + balance.toLocaleString('en-IN');
+    balEl.style.color = balance >= 0 ? 'var(--safe)' : 'var(--danger)';
+    
+    document.getElementById('leakAlert').style.display = balance < 0 ? 'block' : 'none';
+  }
+
+  function resetForm() {
+    if(confirm("Clear all numbers for this month?")) {
+      document.querySelectorAll('input[type="number"]').forEach(inp => inp.value = '');
+      calculate();
+    }
+  }
+
+  function saveData() {
+    alert("Month Data Saved Locally!");
+    // You can extend this to save to a History array like the previous version
+  }
+
+  // Init
+  renderTracker();
+  calculate();
+  document.getElementById('dateDisplay').innerText = new Date().toLocaleDateString('en-US', {month:'long', year:'numeric'}).toUpperCase();
+</script>
+
+</body>
+</html>
+
